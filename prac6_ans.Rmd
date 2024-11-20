@@ -1,0 +1,164 @@
+---
+title: "prac6"
+author: "Ruoyu"
+date: "2024-11-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "SMI_P6 Solutions"
+output: html_document
+---
+
+## Overview
+
+In this practical, we will perform ANOVA and model comparison in R.  
+If you would like to install R and R-Studio on your personal device, you can find instructions on MyUni:  
+[Installing R and R-Studio](https://myuni.adelaide.edu.au/courses/94623/pages/installing-r-and-r-studio).
+
+In this week’s practical, we will:
+- Fit a linear regression model, then perform one-way ANOVA to check for a significant effect.
+- Fit identical, parallel, and separate regressions models.
+- Select the best model using appropriate criteria.
+
+---
+
+## Load the Data and Libraries
+
+```{r}
+library(tidyverse)
+library(magrittr)
+data("mpg", package = "ggplot2")
+mpg
+```
+
+---
+
+## Preliminary Analysis
+
+Produce a scatterplot:
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty)) +
+  geom_point()
+```
+
+**Question:** What is the relationship between `cty` and `displ`?  
+**Solution:** The relationship is negative.
+
+Produce a boxplot:
+```{r}
+mpg %>%
+  ggplot(aes(y = cty, x = drv)) +
+  geom_boxplot()
+```
+
+**Question:** Which level of `drv` has the highest city fuel efficiency?  
+**Solution:** `drv = f` has the highest fuel efficiency.
+
+Produce a scatterplot colored by `drv`:
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = cty, colour = drv)) +
+  geom_point() +
+  geom_smooth(formula = y ~ x, method = lm, se = FALSE)
+```
+
+**Question:** Is there a relationship between `drv` and `displ` in predicting `cty`?  
+**Solution:** Yes, there appears to be a relationship.
+
+---
+
+## ANOVA
+
+Fit a linear regression model and perform a one-way ANOVA:
+```{r}
+lm1 <- lm(cty ~ drv, data = mpg)
+anova(lm1)
+```
+
+**Question:** What is the observed value of the test statistic for the one-way ANOVA?  
+**Solution:** $F = 92.676$
+
+**Question:** What are the degrees of freedom?  
+**Solution:** $df = 2, 231$
+
+**Question:** Do you accept or reject $H_0$ at $\alpha = 0.05$?  
+**Solution:** Reject $H_0$ as the p-value is less than 0.05.
+
+---
+
+## Identical Regressions Model
+
+Fit a linear regression:
+```{r}
+lm2 <- lm(cty ~ displ, data = mpg)
+summary(lm2)
+```
+
+**Question:** What is the value of $\hat{\beta_0}$ (intercept)?  
+**Solution:** $\hat{\beta_0} = 25.9915$
+
+---
+
+## Parallel Regressions Model
+
+Fit a linear regression:
+```{r}
+lm3 <- lm(cty ~ displ + drv, data = mpg)
+summary(lm3)
+```
+
+**Question:** What are the equations for the lines of best fit?  
+**Solution:**  
+- For `drv = 4`: $cty = 23.6796 - 2.3385 \cdot displ$  
+- For `drv = f`: $cty = 25.9547 - 2.3385 \cdot displ$  
+- For `drv = r`: $cty = 26.1841 - 2.3385 \cdot displ$
+
+---
+
+## Separate Regressions Model
+
+Fit a regression model with interaction terms:
+```{r}
+lm4 <- lm(cty ~ displ * drv, data = mpg)
+summary(lm4)
+```
+
+**Question:** What are the equations for the lines of best fit?  
+**Solution:**  
+- For `drv = 4`: $cty = 22.5914 - 2.0663 \cdot displ$  
+- For `drv = f`: $cty = 28.7198 - 3.4193 \cdot displ$  
+- For `drv = r`: $cty = 19.579 - 1.0624 \cdot displ$
+
+---
+
+## Model Selection
+
+Compare models using AIC:
+```{r}
+AIC(lm2, lm3, lm4)
+```
+
+Compare models using BIC:
+```{r}
+BIC(lm2, lm3, lm4)
+```
+
+**Question:** Which model is preferred by AIC?  
+**Solution:** The separate regressions model ($AIC = 1051.857$).
+
+**Question:** Which model is preferred by BIC?  
+**Solution:** The separate regressions model ($BIC = 1076.045$).
+
+Predict `cty` for a car with 4.7L engine displacement and `drv = 4`:
+```{r}
+new_car <- data.frame(displ = 4.7, drv = "4")
+predict(lm4, newdata = new_car)
+```
+
+**Solution:** The predicted value of `cty` is 12.8797.
